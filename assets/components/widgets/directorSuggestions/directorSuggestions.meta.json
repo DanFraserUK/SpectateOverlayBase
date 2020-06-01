@@ -1,8 +1,10 @@
 {
+	"version": "1.0.0",
 	"elementName": "DirectorSuggestions",
 	"name": "Director suggestions",
-	"buttonText": "Director suggestions",
 	"keepOnSessionChange": true,
-	"activeInSessions": ["Practice", "Qualifying", "Race"],
-	"defaultActive": true
+	"activeInSessions": ["Practice", "Qualifying", "Race", "Warmup"],
+	"defaultActive": false,
+	"translationLabel": "directorSuggestionsLabel",
+	"translationDescription": "directorSuggestionsDescription"
 }

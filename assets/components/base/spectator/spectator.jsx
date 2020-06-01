@@ -14,6 +14,38 @@ UI.components.Spectator = React.createClass({
 							done();
 						});
 					});
+					jobs.push(function(done) {
+						r3e.getPitInfo({
+							'slotId': driver.slotId
+						}, function(pitInfo) {
+							driver.pitInfo = pitInfo;
+							done();
+						});
+					});
+					jobs.push(function(done) {
+						r3e.getExtendedInfo({
+							'slotId': driver.slotId
+						}, function(extendedInfo) {
+							driver.extendedInfo = extendedInfo;
+							done();
+						});
+					});
+					jobs.push(function(done) {
+						r3e.getPushToPassInfo({
+							'slotId': driver.slotId
+						}, function(pushToPassInfo) {
+							driver.pushToPassInfo = pushToPassInfo;
+							done();
+						});
+					});
+					jobs.push(function(done) {
+						r3e.getVehicleInfo({
+							'slotId': driver.slotId
+						}, function(vehicleInfo) {
+							driver.vehicleInfo = vehicleInfo;
+							done();
+						});
+					});
 				});
 				UI.batch(jobs, function(data) {
 					r3e.getSessionInfo(function(sessionInfo) {
@@ -28,120 +60,45 @@ UI.components.Spectator = React.createClass({
 		}, UI.controllerUpdateRate);
 
 		r3e.waitOnResults({'wait': true})
-		
-		// MEGA HACK START ---------------------------
-		
-		r3e.on.results(function(results) {
-			console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! results', JSON.stringify(results))
-			function findDriverResult(id) {
-				for (var i = 0; i < results.grid.length; i++) {
-					var data = results.grid[i];
-					if (data.userId == id)
-						return data
-				}
-			}
-			
-			if (results.live === 0) {
-				
-				/*
-				{
-					"name": driver.name,
-					"portalId": driver.portalId,
-					"teamId": driver.teamId,
-					"classId": driver.classId,
-					"manufacturerId": driver.manufacturerId,
-					"liveryId": driver.liveryId,
-					"positionOverall": driver.scoreInfo.positionOverall,
-					"positionClass": driver.scoreInfo.positionClass,
-					"finishStatus": ,
-					"totalTime": ,
-					"penaltyTime": ,
-					"penaltyWeight": ,
-					"bestLapInfo": driver.scoreInfo.bestLapInfo
-				},*/
-				
-				r3e.getDriversInfo(function(driversInfo) {
-					var jobs = [];
-					var driverData = driversInfo.driversInfo;
-					driverData.forEach(function(driver) {
-						jobs.push(function(done) {
-							r3e.getVehicleInfo({
-								'slotId': driver.slotId
-							}, function(vehicleInfo) {
-								driver.vehicleInfo = vehicleInfo;
-								done();
-							});
-						});
-						jobs.push(function(done) {
-							r3e.getExtendedInfo({
-								'slotId': driver.slotId
-							}, function(extendedInfo) {
-								driver.extendedInfo = extendedInfo;
-								done();
-							});
-						});
-					});
-					UI.batch(jobs, function(data) {
-						r3e.getSessionInfo(function(sessionInfo) {
-							r3e.getEventInfo(function(eventInfo) {
-								
-								if (sessionInfo.type.indexOf("RACE") !== -1) {
-									
-									var results = []
-									
-									driverData.forEach(function (driver, i) {
-										var data = findDriverResult(driver.portalId)
-										results.push({
-											"name": driver.name,
-											"portalId": driver.portalId,
-											"teamId": driver.teamId,
-											"classId": driver.classId,
-											"manufacturerId": driver.manufacturerId,
-											"liveryId": driver.liveryId,
-											"positionOverall": driver.scoreInfo.positionOverall,
-											"positionClass": driver.scoreInfo.positionClass,
-											"finishStatus": data ? data.status : 1,
-											"totalTime": data ? data.totalTime : 0,
-											"penaltyTime": data ? data.penaltyTime : 0,
-											"penaltyWeight": data ? data.penaltyWeight : 0,
-											"bestLapInfo": driver.scoreInfo.bestLapInfo
-										})
-									})
-									
-									
-									self.setState({
-										'results': results
-									});
-									
-								}
-								/*console.log('driversInfo', driverData);
-								console.log('sessionInfo', sessionInfo);
-								console.log('eventInfo', eventInfo);
-								console.log(JSON.stringify({
-									driverData: driverData,
-									sessionInfo: sessionInfo,
-									eventInfo: eventInfo
-									
-								}))*/
-							});
-						});
-					});
+
+		// Race control alerts
+		var eventTimeout;
+		r3e.on.eventOccurred(function(event) {
+			var alertLength = UI.state.controllerOptions.options.alertLength.value * 1000;
+
+			r3e.getDriverInfo({'slotId': event.slotId
+			}, function(driverInfo) {
+
+				event.driverName = driverInfo.name;
+				self.setState({
+					'event': event
 				});
-			}
-			
-		})
-		
-		// --------------------------- MEGA HACK END
-		
+			});
+
+			eventTimeout = setTimeout(function() {
+				event.removing = true;
+				self.setState({
+					'event': event
+				});
+
+				eventTimeout = setTimeout(function() {
+					self.setState({
+						'event': null
+					});
+				}, alertLength+1)
+			}, alertLength);
+		});
+
 		r3e.on.resultsUpdate(function(results) {
-			//console.log("resultsUpdate", results)
+			var continueToNextSessionTime = UI.state.controllerOptions.options.continueToNextSessionTime.value  * 1000;
+
 			self.setState({
 				'results': results.Results
 			});
 
 			setTimeout(function() {
 				r3e.goToNextEvent();
-			}, 45*1000);
+			}, continueToNextSessionTime);
 		});
 
 		var pitWindowTimeout;
@@ -175,7 +132,8 @@ UI.components.Spectator = React.createClass({
 	getInitialState: function() {
 		return {
 			'results': null,
-			'pitWindowInfo': null
+			'pitWindowInfo': null,
+			'event': null
 		}
 	},
 	componentWillUnmount: function() {
@@ -205,13 +163,18 @@ UI.components.Spectator = React.createClass({
 		var self = this;
 		var themeClass = UI.state.activeTheme;
 		return (
-			<div className={themeClass}>
+			<div>
 			<div className="app-spectator">
 				{Object.keys(UI.state.activeWidgets).map(function(type) {
 					return (!self.state.results && UI.state.activeWidgets[type].active) ? React.createElement(UI.widgets[type], {'key': type}) : null
 				})}
-				{self.state.results ?
+				{self.state.results && UI.state.sessionInfo.type.match(/^race/i) ?
 					<UI.widgets.RaceResults results={self.state.results}/>
+					:
+					null
+				}
+				{self.state.event ?
+					<UI.widgets.Alert event={self.state.event}/>
 					:
 					null
 				}

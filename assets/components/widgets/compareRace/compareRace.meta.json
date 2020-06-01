@@ -1,7 +1,9 @@
 {
+	"version": "1.0.0",
 	"elementName": "CompareRace",
 	"name": "Compare next car",
-	"buttonText": "Compare next car",
 	"activeInSessions": ["Race"],
-	"keepOnSessionChange": false
+	"keepOnSessionChange": false,
+	"translationLabel": "compareRaceLabel",
+	"translationDescription": "compareRaceDescription"
 }

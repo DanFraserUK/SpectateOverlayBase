@@ -182,6 +182,18 @@ var TrackMapControllerDot = React.createClass({
 var WidgetManager = React.createClass({
 	onClickDriver: function(e) {
 		UI.state.activeWidgets[this.props.widget.elementName].active = !this.props.widget.active;
+
+		// disable the compare widget when the driver info widget is selected and vice versa.
+		var compareRaceWidgetId = "CompareRace";
+		var focusedDriverWidgetId = "FocusedDriver";
+		if (UI.state.activeWidgets[this.props.widget.elementName].elementName === compareRaceWidgetId &&
+		UI.state.activeWidgets[this.props.widget.elementName].active === true) {
+			UI.state.activeWidgets[focusedDriverWidgetId].active = false;
+		} else if (UI.state.activeWidgets[this.props.widget.elementName].elementName === focusedDriverWidgetId &&
+		UI.state.activeWidgets[this.props.widget.elementName].active === true) {
+			UI.state.activeWidgets[compareRaceWidgetId].active = false;
+		}
+
 		io.emit('setState', UI.state);
 	},
 	render: function() {
@@ -221,7 +233,7 @@ var WidgetManager = React.createClass({
 
 		return (
 			<div className={cx(classes)} onClick={this.onClickDriver}>
-				<span className="text">{this.props.widget.buttonText}</span>
+				<span className="text" data-title={UI.getStringTranslation("widgetButtons", this.props.widget.translationDescription)}>{UI.getStringTranslation("widgetButtons", this.props.widget.translationLabel)}</span>
 			</div>
 		);
 	}
@@ -254,10 +266,27 @@ var Driver = React.createClass({
 			'interesting': true
 		};
 
-		if (timeDiff > 0 && timeDiff < 1000) {
+		if (timeDiff > 0 && timeDiff < 1000 && timeDiff > 250) {
 			classes['close'] = true;
+		} else if (timeDiff > 0 && timeDiff < 251) {
+			classes['veryClose animated flash'] = true;
 		}
 		return cx(classes);
+	},
+	renderPostion: function(driver) {
+		var divStyle = {
+			position: "absolute"
+		};
+		if (UI.state.controllerOptions.options.multiclass.value === "true" && UI.getClassColour(driver.classId) != null) {
+			classColour = UI.getClassColour(driver.classId);
+			divStyle = {
+					background: classColour,
+					position: "absolute"
+			};
+			return <div className="position" style={divStyle}>P{driver.scoreInfo.positionOverall} / Class P{driver.scoreInfo.positionClass}</div>
+		} else {
+			return <div className="position" style={divStyle}>P{driver.scoreInfo.positionOverall}</div>
+		}
 	},
 	render: function() {
 		var self = this;
@@ -275,7 +304,7 @@ var Driver = React.createClass({
 			<div className={classes} onMouseDown={this.mouseDown} onTouchStart={this.touchStart} style={{'zIndex': (1000-this.props.position)}}>
 				<div className="inner">
 					<div className="meta">
-						<img className="flag" src={'/img/flags/'+UI.getUserInfo(driver.portalId).country+'.svg'} />
+						{!window.settings.offline && <img className="flag" src={'/img/flags/'+UI.getUserInfo(driver.portalId).country+'.png'} />}
 						<div className="name">{UI.fixName(driver.name)}</div>
 					</div>
 					<img className="livery" src={'/render/'+driver.liveryId+'/'+this.props.imageSize+'/'}/>
@@ -289,15 +318,98 @@ var Driver = React.createClass({
 						:
 						null
 					}
-					<div className="current-position">{driver.scoreInfo.positionOverall}</div>
+					{self.renderPostion(driver)}
 				</div>
 			</div>
 		);
 	}
 });
 
-UI.components.Controller = React.createClass({
+
+// control options
+var ControlOption = React.createClass({
 	componentWillMount: function() {
+		this.handleInputChange = this.handleInputChange.bind(this);
+	},
+	handleInputChange: function(event) {
+		var self = this;
+		const target = event.target;
+    const value = target.type === 'checkbox' ? target.checked : target.value;
+
+		var updates = {"keyName": self.state.key, "newValue": value};
+
+		// save to json file
+		$.post('/saveControllerOptions/', updates, function(response) {
+			if (response.error) {
+				console.log("Error saving control options: " + response.error);
+				return;
+			}
+
+			// on success, update global state
+			var newConfig = JSON.parse(response);
+			UI.state.controllerOptions = newConfig;
+			io.emit('setState', UI.state);
+		}, 'json');
+  },
+	render: function() {
+		var self = this;
+
+		self.state = self.props.data;
+
+		var classes = cx({
+			'controlPanelOption': true
+		});
+
+		var color = self.state.value != "false" ? '#4CAF50' : '#F44336';
+
+		return (
+			<div className={classes}>
+					<form>
+							<div className="option">
+				        <label>
+				          <span title={UI.getStringTranslation("configFile", self.state.translationDescription)} style={{'font-size': '20px', 'color': color}}>🛈 {UI.getStringTranslation("configFile", self.state.translationDisplayName)}</span>
+				          <input
+				            defaultValue={self.state.value}
+				            type={self.state.type}
+										defaultChecked={self.state.value === "true"}
+				            onChange={self.handleInputChange} />
+				        </label>
+							</div>
+			   </form>
+		</div>
+		);
+	}
+});
+
+UI.components.Controller = React.createClass({
+	async componentWillMount() {
+
+		// update checker
+		var self = this;
+
+		if (window.settings.offline !== true) {
+			// github repo with version.json
+			let base64PublishedVersionUrl = 'aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL3RvbWphY2ttYW4vcnJlLXNwZWMvbWFzdGVyL3B1YmxpYy92ZXJzaW9uLmpzb24=';
+			let localVersionUrl = 'version.json';
+
+			const published = await fetch(atob(base64PublishedVersionUrl));
+			const publishedVersion = await published.json();
+
+			const local = await fetch(localVersionUrl);
+			const localVersion = await local.json();
+
+			if(publishedVersion.version > localVersion.version) {
+				var confirmText = "A New Update (v" + publishedVersion.version + ") is now available in the Sector 3 Forums (forum.sector3studios.com), visit download page?";
+				if (confirm(confirmText)) {
+					// Overlay thread on S3 forum
+					let base64ForumUrl = "aHR0cHM6Ly9mb3J1bS5zZWN0b3Izc3R1ZGlvcy5jb20vaW5kZXgucGhwP3RocmVhZHMvcjNlLXJlYWxpdHktbW9kZXJuLWJyb2FkY2FzdC1vdmVybGF5LjEyMDYxLw==";
+					window.open(atob(base64ForumUrl), '_blank');
+				}
+			} else {
+				console.log("Current Version is up to date (v" + localVersion.version + ").");
+			}
+		}
+
 		io.on('driversInfo', this.setDriversInfo);
 		io.on('directorSuggestions', this.setDirectorSuggestions);
 
@@ -356,11 +468,13 @@ UI.components.Controller = React.createClass({
 		});
 	},
 	getInitialState: function() {
+		this.toggleControlPanel = this.toggleControlPanel.bind(this);
 		return {
 			'driversInfo': [],
 			'directorSuggestions': [],
 			'active': false,
-			'showCameraController': false
+			'showCameraController': false,
+			'showControlPanel': false
 		};
 	},
 	componentDidMount: function() {
@@ -422,8 +536,22 @@ UI.components.Controller = React.createClass({
 		}
 	},
 	changeTheme: function(e) {
-		UI.state.activeTheme = e.target.value;
-		io.emit('setState', UI.state);
+		var theme = {"file": e.target.value};
+
+		// save to json file
+		$.post('/changeTheme/', theme, function(response) {
+			if (response.error) {
+				console.log("Error setting theme: " + response.error);
+				return;
+			}
+			var config = JSON.parse(response);
+			var theme = config.theme;
+
+			UI.state.activeTheme = theme;
+			io.emit('setState', UI.state);
+		}, 'json');
+
+
 	},
 	toggleTrackMap: function() {
 		if (window.location.hash.match(/trackmap/)) {
@@ -432,6 +560,9 @@ UI.components.Controller = React.createClass({
 			window.location.hash = 'trackmap';
 		}
 		this.forceUpdate();
+	},
+	toggleControlPanel: function() {
+		this.setState({ showControlPanel: !this.state.showControlPanel });
 	},
 	updateSelf: function() {
 		this.forceUpdate();
@@ -454,9 +585,20 @@ UI.components.Controller = React.createClass({
 		}
 		var session = UI.state.sessionInfo;
 
+		var controlOptionsData = UI.state.controllerOptions.options;
+
 		return (
 			<div className={classes}>
+
 				<div className="title">
+					<a onClick={this.toggleControlPanel}>
+					{ this.state.showControlPanel ?
+						<img className="toggleControlPanel" src="/img/close.png" />
+						:
+						<img className="toggleControlPanel" src="/img/cog.png" />
+					}
+					</a>
+
 					<a onClick={this.toggleTrackMap}>
 					{window.location.hash.match(/trackmap/) && self.state.driversInfo.length ?
 						<img className="toggle-track-map" src="/img/close.svg" />
@@ -465,11 +607,12 @@ UI.components.Controller = React.createClass({
 					}
 					</a>
 					{session.type && session.phase ?
-						<span>{session.type} - {session.phase}: {UI.formatSessionTime(session.timeLeft)}/{UI.formatSessionTime(session.timeTotal)} - {UI.state.eventInfo.serverName}</span>
+						<span>{UI.getStringTranslation("sessionInfoWidget", session.type.toLowerCase().replace(/ /g,""))} - {UI.getStringTranslation("sessionInfoWidget", session.phase.toLowerCase().replace(/ /g,""))}: {UI.formatSessionTime(session.timeLeft)}/{UI.formatSessionTime(session.timeTotal)} - {UI.state.eventInfo.serverName}</span>
 						:
 						null
 					}
 				</div>
+
 				{window.location.hash.match(/trackmap/) && self.state.driversInfo.length ?
 					<TrackMap forceUpdateParent={self.updateSelf} drivers={self.state.driversInfo}/>
 					:
@@ -485,6 +628,55 @@ UI.components.Controller = React.createClass({
 							:
 							null
 						}
+
+						{ this.state.showControlPanel ?
+							<div className="controlPanel animated slideInUp">
+								{Object.keys(controlOptionsData).map(function(key) {
+										// add the key to the data set also
+										controlOptionsData[key].key = key;
+										return <ControlOption data={controlOptionsData[key]} />
+								})}
+							</div>
+							:
+								null
+							}
+
+							{UI.state.controllerOptions.options.useNewBroadcastUI.value === "true" ?
+							<div>
+							<div className="scrap"></div>
+								<div className="drivers-container-beta-title">
+									<div className="tabled-driver-entry">
+										<div className="position">{UI.getStringTranslation("controller", "position")}</div>
+										<div className="lap">{UI.getStringTranslation("controller", "lap")}</div>
+										<div className="interesting">{UI.getStringTranslation("controller", "difference")}</div>
+										<div className="flag"></div>
+										<div className="name">{UI.getStringTranslation("controller", "driver")}</div>
+										<div className="manufacturer"></div>
+										<div className="livery"></div>
+										<div className="cameras">{UI.getStringTranslation("controller", "cameras")}</div>
+										<div className="currentSpeed">{UI.getStringTranslation("controller", "speed")}</div>
+										<div className="pit">{UI.getStringTranslation("controller", "pitCount")}</div>
+										<div className="mandatoryPit">{UI.getStringTranslation("controller", "mandatoryPit")}</div>
+										<div className="tyre">{UI.getStringTranslation("controller", "tyre")}</div>
+										<div className="tyreWear">{UI.getStringTranslation("controller", "tyreWear")}</div>
+										<div className="damage">{UI.getStringTranslation("controller", "damage")}</div>
+										<div className="flags">{UI.getStringTranslation("controller", "flags")}</div>
+										<div className="ptp">{UI.getStringTranslation("controller", "ptp")}</div>
+										<div className="drs">{UI.getStringTranslation("controller", "drs")}</div>
+										<div className="best-lap-s1">{UI.getStringTranslation("controller", "sector1")}</div>
+										<div className="best-lap-s2">{UI.getStringTranslation("controller", "sector2")}</div>
+										<div className="best-lap-time">{UI.getStringTranslation("controller", "bestLap")}</div>
+										<div className="last-lap-time">{UI.getStringTranslation("controller", "lastLap")}</div>
+								 </div>
+							 </div>
+
+							<div className={cx({'drivers-container-beta': true, 'has-suggestions': self.state.directorSuggestions.length})}>
+									{self.state.driversInfo.sort(self.sortFunctionPosition).map(function(driver, i) {
+										return <TabledDriver key={driver.slotId} focused={driver.slotId === UI.state.focusedSlot} imageSize="small" position={i} driver={driver} fastest={self.state.driversInfo[0]}></TabledDriver>
+									})}
+							</div>
+							</div>
+							:
 						<div className={cx({'drivers-container': true, 'has-suggestions': self.state.directorSuggestions.length})}>
 							<div className="drivers">
 								{self.state.driversInfo.sort(self.sortFunctionPosition).map(function(driver, i){
@@ -492,6 +684,7 @@ UI.components.Controller = React.createClass({
 								})}
 							</div>
 						</div>
+						}
 					</div>
 				}
 				<div onMouseUp={this.mouseUp} className="camera-control">
@@ -503,11 +696,11 @@ UI.components.Controller = React.createClass({
 					<div onMouseEnter={this.enter} onMouseUp={this.mouseUpCameraControl} className="control bottomLeft" data-value="wing">Rear wing</div>
 				</div>
 				<div className="widgets-list">
-					<select value={UI.state.activeTheme} onChange={self.changeTheme}>
-						{Object.keys(UI.state.themes).map(function(key) {
-							return <option key={key} value={key}>{key.toUpperCase()}</option>
-						})}
-					</select>
+				<select value={UI.state.activeTheme} onChange={self.changeTheme}>
+					{Object.keys(UI.state.themes).map(function(key) {
+						return <option key={key} value={key}>{key.toUpperCase().replace(/-/g, " ")}</option>
+					})}
+				</select>
 					<div className="widget-buttons">
 						{Object.keys(UI.state.activeWidgets).sort().map(function(key) {
 							return <WidgetManager widget={UI.state.activeWidgets[key]} key={key}/>
@@ -515,6 +708,179 @@ UI.components.Controller = React.createClass({
 					</div>
 				</div>
 			</div>
+		);
+	}
+});
+
+var TabledDriver = React.createClass({
+	changeCamera: function(camera, slotId) {
+		UI.state.focusedSlot = slotId;
+		UI.state.camera = camera;
+		io.emit('setState', UI.state);
+		io.emit('updatedCamera', {});
+	},
+	getInterestingStyle: function(timeDiff) {
+		var classes = {
+			'interesting': true
+		};
+
+		if (timeDiff > 0 && timeDiff < 1000 && timeDiff > 250) {
+			classes['close'] = true;
+		} else if (timeDiff > 0 && timeDiff < 251) {
+			classes['veryClose'] = true;
+		}
+		return cx(classes);
+	},
+	renderPostion: function(driver) {
+		var divStyle = {};
+		if (UI.state.controllerOptions.options.multiclass.value === "true" && UI.getClassColour(driver.classId) != null) {
+			classColour = UI.getClassColour(driver.classId);
+			divStyle = {
+					background: classColour
+			};
+			return <div className="position" style={divStyle} title={UI.getStringTranslation("controller", "overall") + " - P" + driver.scoreInfo.positionOverall + ", " + UI.getStringTranslation("controller", "class") + " - P" + driver.scoreInfo.positionClass}>{driver.scoreInfo.positionClass}</div>
+		} else {
+			return <div className="position" style={divStyle} title={UI.getStringTranslation("controller", "overall") + " - P" + driver.scoreInfo.positionOverall + ", " + UI.getStringTranslation("controller", "class") + " - P" + driver.scoreInfo.positionClass}>{driver.scoreInfo.positionOverall}</div>
+		}
+	},
+	renderDamage: function(damage) {
+		var damageAverage = ((damage.engine + damage.transmission + damage.frontAero + damage.rearAero)/4);
+		var damageTooltip = UI.getStringTranslation("controller", "engineDamage") + ": " + damage.engine + "%, " +
+		UI.getStringTranslation("controller", "transmissionDamage") + ": " + damage.transmission + "%, " +
+		UI.getStringTranslation("controller", "fronteAeroDamage") + ": " + damage.frontAero + "%, " +
+		UI.getStringTranslation("controller", "rearAeroDamage") + ": " + damage.rearAero + "%";
+
+		var highestDamage = Math.max(damage.engine, damage.transmission, damage.frontAero, damage.rearAero);
+
+		if (damage.engine > 70 || damage.transmission > 70 || damage.frontAero > 70 || damage.rearAero > 70) {
+			return <div className="damage" style={{color: '#F44336'}} title={damageTooltip}>{highestDamage + "%"}</div>
+		} else if (damage.engine > 50 || damage.transmission > 30 || damage.frontAero > 50 || damage.rearAero > 50) {
+			return <div className="damage" style={{color: '#FF5722'}} title={damageTooltip}>{highestDamage + "%"}</div>
+		} else if (damage.engine > 25 || damage.transmission > 25 || damage.frontAero > 25 || damage.rearAero > 25) {
+			return <div className="damage" style={{color: '#FFC107'}} title={damageTooltip}>{highestDamage + "%"}</div>
+		}	else {
+			return <div className="damage" style={{color: '#8BC34A'}} title={damageTooltip}>{highestDamage + "%"}</div>
+		}
+	},
+	renderMandatoryPit: function(mandatoryPit) {
+		if (mandatoryPit === 1) {
+			return <div className="mandatoryPit" style={{color: '#2E7D32'}} title={UI.getStringTranslation("controller", "mandatoryPitTaken")}>⭗</div>
+		} else if (mandatoryPit === 0) {
+			return <div className="mandatoryPit" style={{color: 'rgba(226, 29, 56, 1)'}} title={UI.getStringTranslation("controller", "mandatoryPitNotTaken")}>⭗</div>
+		}	else {
+			return <div className="mandatoryPit" style={{color: '#607D8B'}} title={UI.getStringTranslation("controller", "mandatoryPitNotRequired")}>{UI.getStringTranslation("controller", "notAvailable")}</div>
+		}
+	},
+	getTimeDiff: function(driver, fastestDriver) {
+		var self = this;
+		// Race
+		if (UI.state.sessionInfo.type.match(/^race/i)) {
+			if (driver.scoreInfo.positionOverall === 1) {
+				return  UI.getStringTranslation("controller", "lap") + " " + (driver.scoreInfo.laps + 1);
+			} else if (driver.scoreInfo.lapDiff === 1) {
+				return "+1 " + UI.getStringTranslation("controller", "lap");
+			} else if (driver.scoreInfo.lapDiff > 0) {
+				return "+" + driver.scoreInfo.lapDiff + " " + UI.getStringTranslation("controller", "laps");
+			} else {
+				return "+" + (driver.scoreInfo.timeDiff/1000).toFixed(2);
+			}
+		// Qualify and Practice
+		} else if (UI.state.sessionInfo.type === 'QUALIFYING' || UI.state.sessionInfo.type === 'PRACTICE') {
+			if (driver.scoreInfo.positionOverall === 1) {
+				return "-";
+			} else {
+				if (driver.scoreInfo.bestLapInfo.valid) {
+					return UI.formatTime(driver.scoreInfo.bestLapInfo.sector3 - fastestDriver.scoreInfo.bestLapInfo.sector3);
+				} else {
+					return UI.getStringTranslation("controller", "notAvailable");
+				}
+			}
+		} else {
+			return "N/A";
+		}
+	},
+	getName: function(name) {
+		if (window.settings.teamEvent) {
+			return name.substr(name.indexOf(" ") + 1);
+		} else {
+			return UI.fixName(name);
+		}
+	},
+	render: function() {
+		var self = this;
+
+		var classes = cx({
+			'tabled-driver-entry': true,
+			'focused': this.props.focused,
+			'idle': self.props.driver.vehicleInfo.speed < 5
+		});
+		var driver = self.props.driver;
+		var state = self.state;
+		var timeDiff = driver.scoreInfo.timeDiff;
+		var fastestDriver = self.props.fastest;
+		var isRace = UI.state.sessionInfo.type.match(/^race/i);
+
+		return (
+			<div className={classes} style={{'zIndex': (1000-this.props.position)}}>
+					{self.renderPostion(driver)}
+					<div className="lap">{driver.scoreInfo.laps + 1}</div>
+					{isRace ?
+						<div className={self.getInterestingStyle(timeDiff)} onClick={() => {this.changeCamera('trackside', driver.slotId)}}>{self.getTimeDiff(driver, fastestDriver)}</div>
+						:
+						<div className="interesting" onClick={() => {this.changeCamera('trackside', driver.slotId)}}>{self.getTimeDiff(driver, fastestDriver)}</div>
+					}
+					{!window.settings.offline ?
+						<img className="flag" src={'/img/flags/'+UI.getUserInfo(driver.portalId).country+'.png'} title={UI.getStringTranslation("controller", "country") + " - " + UI.getUserInfo(driver.portalId).countryName}/>
+							:
+						<img className="flag" src={'/img/flags/rr.png'}/>
+					}
+					<div className={cx({'name': true, 'focused': this.props.focused})} onClick={() => {this.changeCamera('trackside', driver.slotId)}} title={UI.getStringTranslation("controller", "portalId") + " - " + driver.portalId}>{self.getName(driver.name)}</div>
+					<img className="manufacturer" src={'/render/'+driver.manufacturerId+'/small/?type=manufacturer'}/>
+					<img className="livery" onClick={() => {this.changeCamera('trackside', driver.slotId)}} src={'/render/'+driver.liveryId+'/'+this.props.imageSize+'/'}/>
+					<div className="tvCam" onClick={() => {this.changeCamera('trackside', driver.slotId)}} title={UI.getStringTranslation("controller", "tvTracksideCamera")}>TV</div>
+					<div className="dashCam" onClick={() => {this.changeCamera('onboard1', driver.slotId)}} title={UI.getStringTranslation("controller", "dashCamera")}>D</div>
+					<div className="cockpitCam" onClick={() => {this.changeCamera('onboard2', driver.slotId)}} title={UI.getStringTranslation("controller", "cockpitCamera")}>C</div>
+					<div className="frontCam" onClick={() => {this.changeCamera('frontCam', driver.slotId)}} title={UI.getStringTranslation("controller", "frontCamera")}>F</div>
+					<div className="rearCam" onClick={() => {this.changeCamera('rearCam', driver.slotId)}} title={UI.getStringTranslation("controller", "rearCamera")}>R</div>
+					<div className="wingCam" onClick={() => {this.changeCamera('wing', driver.slotId)}} title={UI.getStringTranslation("controller", "wingCamera")}>W</div>
+					<div className="currentSpeed" title={UI.getStringTranslation("controller", "currentSpeed")}>{driver.vehicleInfo.speed}</div>
+					<div className="pit" title={UI.getStringTranslation("controller", "pitCountStatus")}>{UI.getStringTranslation("controller", "notAvailable")}</div>
+					{self.renderMandatoryPit(driver.mandatoryPitstopPerformed)}
+					{r3eTyreDB.classes[driver.classId] != null || ["Soft", "Hard", "Primary", "Alternate", "Medium"].indexOf(driver.pitInfo.tyreType) > -1 ?
+						<div className="tyre">
+							<img src={'/img/tyres/'+driver.pitInfo.tyreType+'.png'} />
+						</div>
+						:
+						<div className="tyre">
+							<img src={'/img/tyres/dedicated.png'} title={driver.pitInfo.tyreType} />
+						</div>
+					}
+					<div className="tyreWear" title={UI.getStringTranslation("controller", "tyreWearStatus")}>{UI.getStringTranslation("controller", "notAvailable")}</div>
+					{self.renderDamage(driver.pitInfo.damage)}
+					<div className="flags">
+					 <div className={cx({'blackFlag': true, 'active': driver.scoreInfo.flagInfo.black === 1})} title={UI.getStringTranslation("controller", "blackFlag")}>!</div>
+					 <div className={cx({'blueFlag': true, 'active': driver.scoreInfo.flagInfo.blue === 1})} title={UI.getStringTranslation("controller", "blueFlag")}>!</div>
+					 <div className={cx({'yellowFlag': true, 'active': driver.scoreInfo.flagInfo.yellow === 1})} title={UI.getStringTranslation("controller", "yellowFlag")}>!</div>
+					</div>
+					<div className={cx({'ptp': true, 'active': driver.pushToPassInfo.active})} title={UI.getStringTranslation("controller", "ptpRemaining")}>{driver.pushToPassInfo.allowed ? driver.pushToPassInfo.amountLeft : UI.getStringTranslation("controller", "notAvailable")}</div>
+					{ UI.state.sessionInfo.type === 'PRACTICE' ?
+						<div className={cx({'drs': true, 'active': driver.vehicleInfo.drsEnabled})} title={UI.getStringTranslation("controller", "drsRemaining")}>99</div>
+					:
+						<div className={cx({'drs': true, 'active': driver.vehicleInfo.drsEnabled})} title={UI.getStringTranslation("controller", "drsRemaining")}>{driver.vehicleInfo.drsLeft > -1 ? driver.vehicleInfo.drsLeft : UI.getStringTranslation("controller", "notAvailable")}</div>
+					}
+					<div className="best-lap-s1">{driver.scoreInfo.bestLapInfo.sector1 != -1 ? UI.formatTime(driver.scoreInfo.bestLapInfo.sector1, {ignoreSign: true}) : UI.getStringTranslation("controller", "notAvailable")}</div>
+					<div className="best-lap-s2">{driver.scoreInfo.bestLapInfo.sector2 != -1 ? UI.formatTime(driver.scoreInfo.bestLapInfo.sector2, {ignoreSign: true}) : UI.getStringTranslation("controller", "notAvailable")}</div>
+					{driver.scoreInfo.bestLapInfo.sector3 !== -1 ?
+						<div className="best-lap-time">{UI.formatTime(driver.scoreInfo.bestLapInfo.sector3, {ignoreSign: true})}</div>
+						:
+						<div className="best-lap-time invalid">{UI.getStringTranslation("controller", "noneSet")}</div>
+					}
+					{driver.extendedInfo.lastTenLapsInfo.length > 0 && driver.extendedInfo.lastTenLapsInfo[0].valid ?
+						<div className="last-lap-time">{UI.formatTime(driver.extendedInfo.lastTenLapsInfo[0].sector3, {ignoreSign: true})}</div>
+						:
+						<div className="last-lap-time invalid">{UI.getStringTranslation("controller", "invalid")}</div>
+					}
+				</div>
 		);
 	}
 });

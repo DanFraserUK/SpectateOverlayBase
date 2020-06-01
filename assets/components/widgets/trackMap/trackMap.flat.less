@@ -1,0 +1,117 @@
+@import '../theme/z';
+
+.track-map-bg {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: @TrackMapOverlayBackground;
+	.onCreation(opacity, 0, 1, 0.3s);
+	z-index: 0;
+}
+.track-map {
+	position: fixed;
+	font-size: @fontSize;
+	width: 25em;
+	height: 25em;
+	top: 50%;
+	left: 50%;
+	-webkit-transform: scale(2) translate(-50%, -50%);
+	-webkit-transform-origin: top left;
+	opacity: 0;
+	-webkit-transition: opacity 0.3s;
+	&.loaded {
+		opacity: 1;
+	}
+	.dot {
+		position: absolute;
+		top: 0;
+		left: 0;
+		-webkit-transition: -webkit-transform 0.3s linear;
+		width: 1em;
+		height: 1em;
+		margin: -0.5em 0 0 -0.5em;
+		font-weight: bold;
+		line-height: 2em;
+		text-align: center;
+		color: #fff;
+		border-radius: 100%;
+		z-index: 2;
+		.dot .position .driverName, .manufacturer .vehicle  {
+			vertical-align: top;
+			display: inline-block;
+			height: 4em;
+			line-height: 4em;
+		}
+		.position {
+			position: relative;
+			left: -2.5em;
+			width: 2.5em;
+		  top: -1.5em;
+			border-top-left-radius: 1em;
+			border-bottom-left-radius: 1em;
+			color: @TrackMapDriverPositionText;
+			background: @StandingsDriverNameClassColour;
+		}
+		.driverName {
+			position: relative;
+			top: -3.5em;
+			background-color: @TrackMapDriverNameBackground;
+			width: 6em;
+		}
+		.manufacturer {
+			position: relative;
+			background-color: @TrackMapManufacturerBackground;
+			border-top-right-radius: 1em;
+			border-bottom-right-radius: 1em;
+			left: 5.8em;
+			width: 2.5em;
+			height: 2em;
+			top: -5.5em;
+			img {
+				position: absolute;
+				background-color: @TrackMapManufacturerBackground;
+				top: 0.25em;
+				left: 0.25em;
+				height: 1.6em;
+				width: 1.6em;
+			}
+		}
+		&.idle {
+			opacity: 0.3;
+		}
+		&.start {
+			z-index: 1;
+			background: #aaa;
+			width: 20px;
+			height: 20px;
+			margin: -10px 0 0 -10px;
+		}
+		.name {
+			position: absolute;
+			-webkit-transform: translate(-50%, 0);
+			line-height: 1;
+			background: @backgroundDark;
+			padding: 0.25em;
+			color: #fff;
+			white-space: nowrap;
+			border-radius: 0.25em;
+			bottom: 100%;
+			margin: 0 0 0.25em 0;
+		}
+		&.leader {
+			background:@TrackMapLeaderDotBackground;
+			color: @TrackMapLeaderDotText;
+			z-index: 1;
+		}
+		&.active {
+			background: @TrackMapSelectedDriverBackground;
+			color: @TrackMapSelectedDriverText;
+			z-index: 2;
+		}
+	}
+}
+.track-map {
+	//-webkit-filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.5));
+}

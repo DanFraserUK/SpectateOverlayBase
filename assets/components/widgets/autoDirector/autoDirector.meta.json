@@ -1,8 +1,10 @@
 {
+	"version": "1.0.0",
 	"elementName": "AutoDirector",
 	"name": "Auto Director",
-	"buttonText": "Auto Director",
 	"keepOnSessionChange": true,
-	"activeInSessions": ["Practice", "Qualifying", "Race"],
-	"defaultActive": false
+	"activeInSessions": ["Practice", "Qualifying", "Race", "Warmup"],
+	"defaultActive": true,
+	"translationLabel": "autoDirectorLabel",
+	"translationDescription": "autoDirectorDescription"
 }

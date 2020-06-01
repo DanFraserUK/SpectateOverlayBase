@@ -1,8 +1,10 @@
 {
+	"version": "1.0.0",
 	"elementName": "LogoOverlay",
 	"name": "Logo overlay",
-	"buttonText": "Logo overlay",
 	"keepOnSessionChange": false,
 	"activeInSessions": ["Practice", "Qualifying", "Race"],
-	"defaultActive": true
+	"defaultActive": true,
+	"translationLabel": "logoOverlayLabel",
+	"translationDescription": "logoOverlayDescription"
 }

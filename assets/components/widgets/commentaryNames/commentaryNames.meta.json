@@ -1,0 +1,10 @@
+{
+	"version": "1.0.0",
+	"elementName": "CommentaryNames",
+	"name": "Commentary Names",
+	"keepOnSessionChange": false,
+	"activeInSessions": ["Practice", "Qualifying", "Race", "Warmup"],
+	"defaultActive": false,
+	"translationLabel": "commentaryNamesLabel",
+	"translationDescription": "commentaryNamesDescription"
+}

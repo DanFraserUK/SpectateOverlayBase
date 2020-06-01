@@ -13,19 +13,30 @@ UI.c = function createReactComponent(type, data) {
 	return UI.components[type](data);
 };
 
-UI.controllerUpdateRate = 1000/2;
-UI.spectatorUpdateRate = 1000/15;
+UI.controllerUpdateRate = 999;
+UI.spectatorUpdateRate = 1000/6;
 
 UI.getUserInfo = (function() {
 	var userCache = {};
 	return function(id) {
+		if (window.settings.offline === true) {
+			return {
+				country: 'zz',
+				avatar: `/render/${id}/small/?type=avatar`,
+				team: ''
+			};
+		}
+
 		if (userCache[id]) {
 			return userCache[id];
 		}
 
 		userCache[id] = {
 			country: 'zz', // default to neutral country
-			avatar: '/img/placeholder-avatar.png'
+			countryName: 'Unknown', // default to neutral country
+			avatar: '/img/placeholder-avatar.png',
+			rank: "",
+			team: ""
 		};
 
 		$.getJSON('/user-info/' + id, function(data) {
@@ -44,6 +55,45 @@ UI.fixName = function(name) {
 	return name.replace(/(^.| .)/g, function(str) {
 		return str.toUpperCase();
 	});
+};
+
+UI.getClassColour = function(classId) {
+	if (r3eData.classes[classId] != null && r3eClassColours.classes[classId] != null) {
+		return r3eClassColours.classes[classId].colour;
+	} else {
+		return null;
+	}
+};
+
+// UI.getCurrentLanguage = function() {
+// 	let locationSearch = window.location.search;
+// 	let params = new URLSearchParams(locationSearch);
+// 	let languageParam = params.get('language');
+//
+// 	// allow a url path language to override the settings file.
+// 	if (languageParam != null) {
+// 		UI.state.language = languageParam;
+// 		return languageParam;
+// 	} else {
+// 		UI.state.language = window.settings.language;
+// 		return window.settings.language;
+// 	}
+// }
+
+// get the translation for a given category and key
+UI.getStringTranslation = function(category, key) {
+	UI.state.language = window.settings.language;
+	var language = UI.state.language;
+	var languages = UI.state.languages;
+
+	if (languages != null &&
+		languages[language] != null &&
+		languages[language][category] != null &&
+		languages[language][category][key] != null) {
+			return languages[language][category][key];
+	} else {
+		return "";
+	}
 };
 
 UI.formatSessionTime = function(seconds) {
@@ -169,17 +219,17 @@ $(document).keyup(function(e) {
 			r3e.exit();
 		}
 	}
-	if (e.which === 82) { // r
+	if (e.which === 116) { // F5
 		window.location.reload(true);
 	}
-	if (e.which === 67) { // c
-		cursorShowing = !cursorShowing;
-		if (window.r3e) {
-			r3e.showCursor({
-				'show': cursorShowing
-			});
-		}
-	}
+	// if (e.which === 67) { // c
+	// 	cursorShowing = !cursorShowing;
+	// 	if (window.r3e) {
+	// 		r3e.showCursor({
+	// 			'show': cursorShowing
+	// 		});
+	// 	}
+	// }
 });
 
 // Allow the spectator to work in an iframe

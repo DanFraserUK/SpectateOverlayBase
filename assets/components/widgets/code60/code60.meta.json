@@ -1,0 +1,10 @@
+{
+	"version": "1.0.0",
+	"elementName": "Code60",
+	"name": "Code 60",
+	"keepOnSessionChange": false,
+	"activeInSessions": ["Race"],
+	"defaultActive": false,
+	"translationLabel": "code60Label",
+	"translationDescription": "code60Description"
+}
