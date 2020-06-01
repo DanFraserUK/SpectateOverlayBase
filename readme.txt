@@ -8,4 +8,3 @@
 5. Join mp serverselect
 
 # This is a base repository for creating a spectate mode overlay for SABSIMRacing Video content.
-Blah, test 2!
