@@ -6,3 +6,5 @@
 3. Add -broadcastUrl=http://localhost:9090 in Steam Game launch
 4. Open http://localhost:9090 in browser
 5. Join mp serverselect
+
+# This is a base repository for creating a spectate mode overlay for SABSIMRacing Video content.
