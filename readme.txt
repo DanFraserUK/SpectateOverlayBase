@@ -10,5 +10,3 @@
 # This is a base repository for creating a spectate mode overlay for SABSIMRacing Video content.
 
 
-
-This is a test to see if cross user updates work
