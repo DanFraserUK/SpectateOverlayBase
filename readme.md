@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # RRE TV Overlay
 
 ![alt text](public/img/vw.jpg "Logo Title Text 1")
@@ -41,3 +42,15 @@ Select the theme from the dropdown to view the results on screen.
 
 ### License
 The [Unlicense](LICENSE).
+=======
+# This is a pre release, only use this to get an idea of what the first official release will be like
+
+# How to get started
+1. Install http://nodejs.org/
+2. Run start.bat
+3. Add -broadcastUrl=http://localhost:9090 in Steam Game launch
+4. Open http://localhost:9090 in browser
+5. Join mp serverselect
+
+# This is a base repository for creating a spectate mode overlay for SABSIMRacing Video content.
+>>>>>>> 0ce8f0ecf098ba35ac14c4f11f27194a9ab592c2
