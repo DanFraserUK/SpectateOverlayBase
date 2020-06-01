@@ -1,0 +1,9 @@
+{
+	"version": "1.0.0",
+	"elementName": "EventInfo",
+	"name": "Event Info",
+	"activeInSessions": ["Practice", "Qualifying", "Race", "Warmup"],
+	"keepOnSessionChange": false,
+	"translationLabel": "eventInfoLabel",
+	"translationDescription": "eventInfoDescription"
+}

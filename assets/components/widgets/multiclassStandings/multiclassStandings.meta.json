@@ -1,0 +1,11 @@
+{
+	"version": "1.0.0",
+	"elementName": "MulticlassStandings",
+	"name": "Standings",
+	"activeInSessions": ["Practice", "Qualifying", "Race", "Warmup"],
+	"keepOnSessionChange": true,
+	"disableFlags": false,
+	"defaultActive": true,
+	"translationLabel": "multiclassStandingsLabel",
+	"translationDescription": "multiclassStandingsDescription"
+}

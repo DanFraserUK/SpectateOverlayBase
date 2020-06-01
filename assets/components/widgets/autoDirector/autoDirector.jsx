@@ -22,6 +22,14 @@ UI.scoringRules = {
 
 		return score;
 	},
+	// people in yellow flag zones may be interesting, particulary those who might be cuasing it
+	'causingYellowFlag': function(score, driver, drivers) {
+		if (UI.state.sessionInfo.type.match(/^race/i) && driver.scoreInfo.flagInfo.yellow > 0 && driver.vehicleInfo.speed > 10 && driver.vehicleInfo.speed < 50) {
+			score += 10;
+		}
+
+		return score;
+	},
 	// Interesting if they don't have a time already in non race
 	'noBestTime': function(score, driver, drivers) {
 		if (UI.state.sessionInfo.type.match(/^race/i)) {
@@ -141,7 +149,7 @@ UI.scoringRules = {
 			return score;
 		}
 
-		var secondsPassed = session.timeTotal-session.timeLeft;
+		var secondsPassed = ((UI.state.sessionInfo.timeTotal/3600)*60)-UI.state.sessionInfo.timeLeft
 		if (secondsPassed < 20 && driver.scoreInfo.positionOverall === 4) {
 			score += 30;
 		}
@@ -167,7 +175,7 @@ UI.scoringRules = {
 		if (!UI.state.sessionInfo.type.match(/^race/i)) {
 			return score;
 		}
-		var ratio = (((1-(driver.scoreInfo.positionOverall/drivers.length))/3)+0.7);
+		var ratio = (((1-(driver.scoreInfo.positionClass/drivers.length))/3)+0.7);
 		score += score*ratio;
 		return score;
 	}
@@ -176,10 +184,12 @@ UI.widgets.AutoDirector = React.createClass({
 	// These rules are checked top to bottom, must return score
 	rules: UI.scoringRules,
 	activateDefaultWidgets: function() {
-		UI.state.activeWidgets.CurrentStandings.active = true;
-		UI.state.activeWidgets.LogoOverlay.active = true;
-		UI.state.activeWidgets.FocusedDriver.active = true;
-		UI.state.activeWidgets.SessionInfo.active = true;
+		if (UI.state.controllerOptions.options.autoDirectorOnlyMode.value === "false") {
+			UI.state.activeWidgets.MulticlassStandings.active = true;
+			UI.state.activeWidgets.LogoOverlay.active = true;
+			UI.state.activeWidgets.SessionInfo.active = true;
+			UI.state.activeWidgets.Alert.active = true;
+		}
 	},
 	usedCockpitCam: false,
 	usedCockpitTimeout: null,

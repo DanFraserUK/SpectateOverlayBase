@@ -1,0 +1,10 @@
+{
+	"version": "1.0.0",
+	"elementName": "Alert",
+	"name": "Alert",
+	"keepOnSessionChange": false,
+	"activeInSessions": ["Race"],
+	"defaultActive": true,
+	"translationLabel": "alertLabel",
+	"translationDescription": "alertDescription"
+}

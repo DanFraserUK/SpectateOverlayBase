@@ -1,8 +1,10 @@
 {
+	"version": "1.0.0",
 	"elementName": "SessionInfo",
-	"name": "Session countdown",
-	"buttonText": "Session countdown",
+	"name": "Session Information",
 	"keepOnSessionChange": false,
-	"activeInSessions": ["Practice", "Qualifying", "Race"],
-	"defaultActive": true
+	"activeInSessions": ["Practice", "Qualifying", "Race", "Warmup"],
+	"defaultActive": true,
+	"translationLabel": "sessionInfoLabel",
+	"translationDescription": "sessionInfoDescription"
 }

@@ -130,7 +130,7 @@ UI.widgets.TrackMap = React.createClass({
 							return <TrackMapDot key={i} svg={self.state.svg} driver={driversLookup[i]}/>
 						}
 						else {
-							return null;						
+							return null;
 						}
 					})}
 					<div
@@ -145,15 +145,28 @@ UI.widgets.TrackMap = React.createClass({
 	}
 });
 var TrackMapDot = React.createClass({
+	getPosition: function(driver) {
+		var divStyle = {};
+		if (UI.state.controllerOptions.options.multiclass.value === "true" && UI.getClassColour(driver.classId) != null) {
+			classColour = UI.getClassColour(driver.classId);
+			divStyle = {
+					background: classColour
+			};
+			return <div className="position" style={divStyle}>P{driver.scoreInfo.positionClass}</div>
+		} else {
+			return <div className="position" style={divStyle}>P{driver.scoreInfo.positionOverall}</div>
+		}
+	},
 	getStyles: function(driver) {
 		return cx({
 			'dot': true,
 			'active': driver.slotId === UI.state.focusedSlot,
-			'leader': driver.scoreInfo.positionOverall === 1,
+			'leader': driver.scoreInfo.positionClass === 1,
 			'idle': driver.vehicleInfo.speed < 5
 		});
 	},
 	getDriverStyle: function(driver) {
+		var self = this;
 		var svg = this.props.svg;
 		var width = svg.el.clientWidth;
 		var height = svg.el.clientHeight;
@@ -169,8 +182,16 @@ var TrackMapDot = React.createClass({
 		var point = svg.path.getPointAtLength(totalLength*progress);
 
 		return {
-			'WebkitTransform': 'translate('+point.x+'px, '+point.y+'px) scale(0.3)'
+			'WebkitTransform': 'translate('+point.x+'px, '+point.y+'px) scale(0.3)',
+			'zIndex': 100-driver.scoreInfo.positionClass,
+			'background': '#607D8B'
 		};
+	},
+	shortenDriverName: function(name) {
+		var firstInitial = name.substr(0, 1).toUpperCase() + ". ";
+		var parts = name.split(' ');
+		var name = firstInitial + parts[parts.length-1].substr(0, 3).toUpperCase();
+		return name;
 	},
 	render: function() {
 		var self = this;
@@ -179,7 +200,11 @@ var TrackMapDot = React.createClass({
 			<div
 			className={self.getStyles(driver)}
 			style={self.getDriverStyle(driver)}>
-				{driver.scoreInfo.positionOverall}
+				{self.getPosition(driver)}
+				<div className="driverName">{self.shortenDriverName(driver.name)}</div>
+				<div className="manufacturer">
+					<img src={'/render/'+driver.manufacturerId+'/small/?type=manufacturer'}/>
+				</div>
 			</div>
 		);
 	}

@@ -3,16 +3,12 @@ var async = require('async');
 var fs = require('fs');
 var chokidar = require('chokidar');
 var path = require('path');
+var settings = require('./../../assets/settings.js');
 
 function updateWidgets(widgetsPath, globalState, callback) {
 	var jobs = [];
 
 	function onFile(err, filePath) {
-		var cssThemeMatch = filePath.match(/\.([a-zA-Z]+)\.less$/);
-		if (cssThemeMatch) {
-			globalState.themes[cssThemeMatch[1]] = true;
-		}
-
 		if (!filePath.match(/meta.json$/)) {
 			return;
 		}
@@ -33,6 +29,12 @@ function updateWidgets(widgetsPath, globalState, callback) {
 					meta.active = globalState.activeWidgets[meta.elementName].active;
 				}
 
+				// Force AutoDirector to be enabled by default if in offline mode
+				if (settings.offline === true && meta.elementName === 'AutoDirector') {
+					meta.defaultActive = true;
+					meta.active = true;
+				}
+
 				globalState.activeWidgets[meta.elementName] = meta;
 				done();
 			});
@@ -45,8 +47,8 @@ function updateWidgets(widgetsPath, globalState, callback) {
 		}
 
 		async.parallel(jobs, function() {
-			console.log('Loaded widgets:'.yellow);
-			console.log(('* '+Object.keys(globalState.activeWidgets).join('\n* ')).yellow+'\n');
+			console.log('> Loaded Widgets:'.green);
+			console.log(('- '+Object.keys(globalState.activeWidgets).join('\n- ')).green+'\n');
 			callback();
 		});
 	}
@@ -77,11 +79,13 @@ module.exports = function(io) {
 		'camera': 'trackside',
 		'activeWidgets': {},
 		'themes': {
-			'generic': true
+			'raceroom-base': true
 		},
-		'activeTheme': 'generic'
+		'activeTheme': 'raceroom-base',
+		'languages': {},
+		'controllerOptions': {}
 	};
-	
+
 	var widgetsPath = __dirname+'/../../assets/components/widgets';
 	chokidar.watch(widgetsPath, {
 		'persistent': true
@@ -92,12 +96,83 @@ module.exports = function(io) {
 			return;
 		}
 
-		updateWidgets(widgetsPath, globalState, function(err, activeWidgets) {
-            io.sockets.emit('updatedState', globalState);
-        });
+	updateWidgets(widgetsPath, globalState, function(err, activeWidgets) {
+      io.sockets.emit('updatedState', globalState);
+    });
 	}
 
 	updateOurWidgets();
+
+	function replaceContents(file, replacement, cb) {
+		fs.readFile(replacement, (err, contents) => {
+			if (err) return cb(err);
+			fs.writeFile(file, contents, cb);
+		});
+	}
+
+	function loadThemes() {
+		var themesDir = __dirname + '/../../theme';
+		var themes = {};
+		fs.readdirSync(themesDir).forEach(file => {
+			var themeName = file.slice(0, -5);
+			if (themeName != "z") {
+				globalState.themes[themeName] = true;
+			}
+		});
+
+		// set default theme on start: raceroom-red.less
+		var defaultTheme = 'raceroom-base';
+		var themeLessFile = themesDir + '/z.less';
+		var activeThemeLessFile = themesDir + '/' + defaultTheme + '.less';
+		replaceContents(themeLessFile, activeThemeLessFile, err => {
+			if (err) {
+				console.log(('Error setting default theme: ' + err).red);
+			}
+			console.log(("> Loaded Default Theme: " + defaultTheme).green);
+		});
+	}
+	loadThemes();
+
+	function loadLanguages() {
+		var languagesDir = __dirname + '/../../languages';
+		var languages = {};
+		fs.readdirSync(languagesDir).forEach(file => {
+			var languageName = file.slice(0, -5);
+			// don't add the base language template as a choice
+			if (languageName != "base") {
+				var languageConfig = require(languagesDir + '/' + languageName + '.json');
+
+				try {
+					 JSON.parse(JSON.stringify(languageConfig));
+					 globalState.languages[languageName] = languageConfig;
+					 console.log(('> Successfully Loaded Language File - ' + languageName).green);
+				} catch (e) {
+					console.log(('Failed to Parse Language JSON File: ' + languageName + ".json - " + e).yellow);
+				}
+			}
+		});
+	}
+	loadLanguages();
+
+	function updateControllerOptions() {
+		var config = require(__dirname + '/../../public/config.json');
+
+		try {
+			 JSON.parse(JSON.stringify(config));
+		} catch (e) {
+			return res.json({
+				error: 'Failed to Parse JSON: ' + e
+			});
+		}
+
+		// prevent caching of the json config
+		delete require.cache[require.resolve(__dirname + '/../../public/config.json')];
+
+		globalState.controllerOptions = config;
+	}
+
+	updateControllerOptions();
+
 	function clearWidgets() {
 		// Assume a new session has started when spectator joins
 		// and disable all overlays

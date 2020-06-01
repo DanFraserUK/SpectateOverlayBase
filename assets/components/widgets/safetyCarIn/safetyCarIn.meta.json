@@ -1,0 +1,10 @@
+{
+	"version": "1.0.0",
+	"elementName": "SafetyCarIn",
+	"name": "Safety Car In",
+	"keepOnSessionChange": false,
+	"activeInSessions": ["Race"],
+	"defaultActive": false,
+	"translationLabel": "safetyCarInLabel",
+	"translationDescription": "safetyCarInDescription"
+}

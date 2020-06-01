@@ -1,0 +1,328 @@
+@import '../theme/z';
+
+.race-results-bg {
+	font-size: @fontSize;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.2);
+}
+.race-results {
+	.entries-outer {
+		max-height: 40em;
+		overflow: hidden;
+
+		.entries-inner {
+			top: 0;
+			position: relative;
+			-webkit-transition: top 15s linear;
+		}
+	}
+	.livery {
+		-webkit-transform: translate3d(0,0,0);
+	}
+}
+.race-results {
+	filter: drop-shadow(9px 9px 9px rgba(0,0,0,1));
+	position: fixed;
+	top: 50%;
+	left: 20%;
+	right: 20%;
+	-webkit-transform: translate(0, -50%);
+	z-index: -1;
+	padding: 0px;
+	color: @RaceResultTitleTextColor;
+	white-space: pre;
+	font-family: Oswald;
+	width: 60%;
+	.title {
+		.text {
+			position: inherit;
+			height: 3.8em;
+			text-align: right;
+			padding: 0 0.75em 0 0;
+			line-height: 5em;
+			font-size: @fontSize * 1.5;
+			background: @RaceResultTitleBackground;
+			border-top: 0.25em solid @RaceResultTitleBorderTop;
+			text-transform: uppercase;
+			padding-bottom: 0.5em;
+			z-index: 0;
+			.logo {
+				position: absolute;
+				content: @RaceResultTitleLogo;
+				height: 2.2em;
+				top: 0.9em;
+				left: 1em;
+				z-index: 1;
+			}
+		}
+	}
+	.race-results-entry {
+		height: 2em;
+		line-height: 2em;
+		color: @RaceResultEntryTextColor;
+		background: @RaceResultEntryBackground;
+		white-space: nowrap;
+		overflow: hidden;
+		&.striped {
+			opacity: 0.85;
+		}
+		&.title {
+			padding: 0 0 0 0em;
+			font-size: @fontSize * 1.1;
+		}
+		&.fastest {
+			.fastest-time {
+				color: rgba(163,34,154,1);
+			}
+		}
+		& > div {
+			height: 37px;
+			padding: 0 0 0 5px;
+			float: left;
+		}
+		&.title .classPosition {
+			color: @QualiResultEntryTextColor;
+			-ms-transform: skew(0deg, 0deg);
+			-webkit-transform: skew(0deg, 0deg);
+			transform: skew(0deg, 0deg);
+		}
+		.position {
+			text-align: center;
+			width: 7%;
+			position: relative;
+		}
+		.classPosition {
+			width: 10%;
+			position: relative;
+			text-align: center;
+			color: white;
+			right: 0.5em;
+			-ms-transform: skew(-15deg, 0deg);
+	    -webkit-transform: skew(-15deg, 0deg);
+	    transform: skew(-15deg, 0deg);
+		}
+		.manufacturer {
+			width: 5%;
+			position: relative;
+			.manufacturerFlag {
+				position: absolute;
+				top: 0.1em;
+				height: 100%;
+				img {
+					height: 100%;
+				}
+			}
+			.standingsFlag {
+				height: 80%;
+				position: absolute;
+				top: 0.2em;
+				img {
+					transform: skew(-15deg, 0deg);
+					height: 100%;
+				}
+			}
+		}
+		.penaltyTime {
+			width: 10%;
+			position: relative;
+			text-align: center;
+		}
+		.longName {
+			position: relative;
+			width: 27%;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			overflow: hidden;
+		}
+		.shortName {
+			position: relative;
+			width: 17%;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			overflow: hidden;
+		}
+		.raceResultTeam {
+			position: relative;
+			width: 20%;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			overflow: hidden;
+		}
+		.livery {
+			width: 10%;
+			position: relative;
+			img {
+				position: relative;
+				height: 3em;
+				right: 1.5em;
+				top: -0.5em;
+			}
+		}
+		.fastest-time, .lap-time {
+			width: 10%;
+			text-align: center;
+			position: relative;
+		}
+	}
+}
+
+.winnerColumn {
+	position: fixed;
+	font-size: @fontSize;
+	width: 14.5em;
+	background: black;
+	left: 2em;
+	height: 13em;
+	top: 40%;
+	-webkit-transform: translate(0, -40%);
+	z-index: 2;
+	border-radius: 0.5em;
+	background: @RaceResultWinnerBackground;
+	.winnerTitle {
+		font-size: @fontSize * 1.5;
+		color: white;
+		height: 2em;
+		text-align: center;
+		line-height: 2em;
+		filter: drop-shadow(7px 7px 7px rgba(0,0,0,0.9));
+	}
+	.winnerImageContainer {
+		left: 7em;
+		width: 7em;
+		z-index: 2;
+		img {
+			width: 7em;
+			filter: drop-shadow(13px 13px 13px rgba(0,0,0,1));
+		}
+	}
+	.winner{
+		font-size: @fontSize * 1.2;
+		text-align: center;
+		line-height: 1.5em;
+		border-top-left-radius: 0.5em;
+		border-top-right-radius: 0.5em;
+		width: 100%;
+		height: 1.5em;
+		color: white;
+	}
+	.livery {
+		position: fixed;
+		left: 2em;
+		top: 90%;
+		-webkit-transform: translate(0, -90%);
+		z-index: 1;
+		img {
+			width: 12.5em;
+			filter: drop-shadow(5px 5px 5px rgba(0,0,0,0.9));
+		}
+	}
+	.driverFlagContainer {
+		position: fixed;
+		content: @RaceResultTitleLogo;
+		width: 5em;
+		top: 35%;
+		-webkit-transform: translate(0, -35%);
+		filter: drop-shadow(7px 7px 7px rgba(0,0,0,0.9));
+		left: 9em;
+		z-index: 1;
+	}
+	.driverName {
+		font-size: @fontSize * 0.9;
+		position: relative;
+		text-align: center;
+		width: 100%;
+		height: 2em;
+		top: 7%;
+		line-height: 1.5em;
+		color: white;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		overflow: hidden;
+		padding: 0.25em;
+		border-bottom-left-radius: 0.5em;
+		border-bottom-right-radius: 0.5em;
+		filter: drop-shadow(7px 7px 7px rgba(0,0,0,0.9));
+	}
+}
+
+.fastestDriverColumn {
+	position: fixed;
+	font-size: @fontSize;
+	width: 14.5em;
+	background: black;
+	right: 2em;
+	top: 40%;
+	-webkit-transform: translate(0, -40%);
+	z-index: 2;
+	border-radius: 0.5em;
+	background: @RaceResultFastestLapBackground;
+	.fastestTitle {
+		font-size: @fontSize * 1.5;
+		color: white;
+		height: 2em;
+		text-align: center;
+		line-height: 2em;
+		filter: drop-shadow(7px 7px 7px rgba(0,0,0,0.9));
+	}
+	.fastestDriverImageContainer {
+		left: 7em;
+		width: 7em;
+		z-index: 2;
+		img {
+			width: 7em;
+			filter: drop-shadow(13px 13px 13px rgba(0,0,0,1));
+		}
+	}
+	.fastestDriverLogo{
+		font-size: @fontSize * 1.2;
+		text-align: center;
+		line-height: 1.5em;
+		border-top-left-radius: 0.5em;
+		border-top-right-radius: 0.5em;
+		width: 100%;
+		height: 1.5em;
+		color: white;
+	}
+	.fastestDriverLivery {
+		position: fixed;
+		left: 2em;
+		top: 90%;
+		-webkit-transform: translate(0, -90%);
+		z-index: 1;
+		img {
+			width: 12.5em;
+			filter: drop-shadow(5px 5px 5px rgba(0,0,0,0.9));
+		}
+	}
+	.fastestDriverFlagContainer {
+		position: fixed;
+		content: @RaceResultTitleLogo;
+		width: 5em;
+		top: 35%;
+		-webkit-transform: translate(0, -35%);
+		filter: drop-shadow(7px 7px 7px rgba(0,0,0,0.9));
+		left: 9em;
+		z-index: 1;
+	}
+	.fastestDriverName {
+		font-size: @fontSize * 0.9;
+		position: relative;
+		text-align: center;
+		width: 100%;
+		height: 2em;
+		top: 7%;
+		line-height: 1.5em;
+		color: white;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		overflow: hidden;
+		padding: 0.25em;
+		border-bottom-left-radius: 0.5em;
+		border-bottom-right-radius: 0.5em;
+		filter: drop-shadow(7px 7px 7px rgba(0,0,0,0.9));
+	}
+}

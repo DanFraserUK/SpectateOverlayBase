@@ -1,8 +1,11 @@
 {
+	"version": "1.0.0",
 	"elementName": "FocusedDriver",
 	"name": "Driver info",
-	"buttonText": "Driver info",
-	"activeInSessions": ["Practice", "Qualifying", "Race"],
+	"activeInSessions": ["Practice", "Qualifying", "Race", "Warmup"],
 	"disableFlags": false,
-	"keepOnSessionChange": false
+	"keepOnSessionChange": true,
+	"defaultActive": true,
+	"translationLabel": "focusedDriverLabel",
+	"translationDescription": "focusedDriverDescription"
 }

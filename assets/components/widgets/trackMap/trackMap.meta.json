@@ -1,8 +1,10 @@
 {
+	"version": "1.0.0",
 	"elementName": "TrackMap",
 	"name": "Track map",
-	"buttonText": "Track map",
 	"keepOnSessionChange": false,
-	"activeInSessions": ["Practice", "Qualifying", "Race"],
-	"defaultActive": false
+	"activeInSessions": ["Practice", "Qualifying", "Race", "Warmup"],
+	"defaultActive": false,
+	"translationLabel": "trackMapLabel",
+	"translationDescription": "trackMapDescription"
 }

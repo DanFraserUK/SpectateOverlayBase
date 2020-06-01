@@ -1,0 +1,146 @@
+@import '../theme/z';
+
+.multiclass-standings {
+	&.hide-flags {
+		.driver .flag-container {
+			display: none;
+		}
+	}
+	filter: drop-shadow(2px 2px 2px rgba(0,0,0,1));
+	position: fixed;
+	top: 1em;
+	color: #fff;
+	left: 1em;
+	.onCreation(-webkit-transform, translate(-10em, 0), translate(0, 0), 0.1s);
+	.driver {
+		font-size: @fontSize;
+		.onCreation(opacity, 0, 1, 0.2s);
+		position: absolute;
+		top: 0;
+		height: 1.7em;
+		z-index: 1;
+		-webkit-transition: -webkit-transform 0.3s linear, left 0.1s linear;
+		white-space: nowrap;
+
+		.inner {
+			height: 1.6em;
+			position: relative;
+			z-index: 1;
+			transform: skew(-15deg, 0deg);
+			& > div {
+				vertical-align: top;
+				height: 100%;
+				line-height: 1.6em;
+			}
+		}
+		.classIndicator {
+			margin-right: 0.3em;
+			background: transparent;
+			display: inline-block;
+			font-size: 1em;
+			text-align: center;
+			width: 0.8em;
+			height: 80%;
+			font-family: Oswald;
+			.position {
+				transform: skew(+15deg, 0deg);
+			}
+		}
+		.positionContainer {
+			margin: 0;
+			font-size: @fontSize;
+			background: @StandingsPositionBackground;
+			display: inline-block;
+			color: @StandingsPositionText;
+			font-size: 1em;
+			text-align: center;
+			width: 2em;
+			height: 80%;
+			font-family: Oswald;
+			.position {
+				transform: skew(+15deg, 0deg);
+			}
+		}
+		.flagContainer {
+			background: @StandingsDriverNameClassColour;
+			display: inline-block;
+			width: 2em;
+			height: 2em;
+			z-index: 1;
+			.standingsFlag {
+				height: 100%;
+				padding: 0.15em;
+				img {
+					height: 100%;
+				}
+			}
+		}
+		.manufacturerContainer {
+			background: @StandingsManufacturerBackground;
+			display: inline-block;
+			width: 2em;
+			height: 2em;
+			z-index: 1;
+			.manufacturerFlag {
+				position: relative;
+				left: 0.2em;
+				height: 100%;
+				img {
+					transform: skew(+15deg, 0deg);
+					height: 100%;
+				}
+			}
+		}
+		.nameContainer {
+			font-size: @fontSize;
+			background-color: rgb(183, 28, 28);
+			font-family: Oswald;
+			display: inline-block;
+			color: @StandingsDriverNameText;
+			background: @StandingsDriverNameClassColour;
+			width: 4em;
+			padding-left: 0.5em;
+			padding-right: 0.5em;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			overflow: hidden;
+			line-height: inherit;
+			z-index: 1;
+			.name {
+				transform: skew(+15deg, 0deg);
+			}
+		}
+		.meta-info {
+			font-size: @fontSize;
+			background: @StandingsTimingBackground;
+			color: @StandingsTimingText;
+			font-family: Oswald;
+			display: inline-block;
+			height: 1.2em;
+			text-align: center;
+			line-height: 1em;
+			min-width: 5em;
+			z-index: -1;
+			.onCreation(-webkit-transform, translate(-100%, 0), translate(0, 0), 0.1s);
+		}
+		.fastest {
+			color: white;
+			background: @DriverInfoGlobalBestSplitBackground;
+		}
+		.pit-info {
+			.onCreation(-webkit-transform, translate(-100%, 0), translate(0, 0), 0.5s);
+			margin: 0;
+			display: inline-block;
+			width: 1.5em;
+			text-align: center;
+			.pitted {
+				font-size: @fontSize * 1.2;
+				background: @StandingsTimingBackgroundPitted;
+			}
+			.unpitted {
+				font-size: @fontSize * 1.2;
+				background: @StandingsTimingBackgroundUnpitted;
+			}
+		}
+	}
+}

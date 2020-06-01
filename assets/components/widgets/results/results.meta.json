@@ -1,9 +1,10 @@
 {
+	"version": "1.0.0",
 	"elementName": "Results",
-	"name": "Results",
-	"buttonText": "Qualify Results",
+	"name": "Show Results on End of Qualifying",
 	"keepOnSessionChange": false,
-	"activeInSessions": ["Qualifying", "Race"],
-	"buttonClasses": ["warning"],
-	"defaultActive": false
+	"activeInSessions": ["Qualifying"],
+	"defaultActive": true,
+	"translationLabel": "resultsLabel",
+	"translationDescription": "resultsDescription"
 }

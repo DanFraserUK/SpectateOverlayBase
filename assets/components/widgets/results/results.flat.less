@@ -1,0 +1,165 @@
+@import '../theme/z';
+
+.overallQuai {
+	font-size: @fontSize;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.2);
+}
+
+.qualify-results {
+
+	.entries-outer {
+		max-height: 40em;
+		overflow: hidden;
+
+		.entries-inner {
+			top: 0;
+			position: relative;
+			-webkit-transition: top 15s linear;
+		}
+	}
+	.livery {
+		-webkit-transform: translate3d(0,0,0);
+	}
+}
+.qualify-results {
+	position: fixed;
+	top: 50%;
+	left: 20%;
+	right: 20%;
+	-webkit-transform: translate(0, -50%);
+	z-index: -1;
+	padding: 0px;
+	color: @QualiResultTitleText;
+	white-space: pre;
+	font-family: Oswald;
+	width: 60%;
+	filter: drop-shadow(9px 9px 9px rgba(0,0,0,1));
+	.title {
+		.text {
+			position: inherit;
+			height: 3.8em;
+			text-align: right;
+			padding: 0 0.75em 0 0;
+			line-height: 5em;
+			font-size: @fontSize * 1.5;
+			background: @QualiResultTitleBackground;
+			border-top: 0.25em solid @QualiResultTitleBorderTop;
+			text-transform: uppercase;
+			padding-bottom: 0.5em;
+			z-index: 0;
+			.logo {
+				position: absolute;
+				content: @RaceResultTitleLogo;
+				height: 2.2em;
+				top: 0.9em;
+				left: 1em;
+				z-index: 1;
+			}
+		}
+	}
+	.qualify-results-entry {
+		height: 2em;
+		line-height: 2em;
+		color: @QualiResultEntryTextColor;
+		background: @QualiResultEntryBackground;
+		white-space: nowrap;
+  	overflow: hidden;
+		&.striped {
+			opacity: 0.85;
+		}
+		&.title {
+			padding: 0 0 0 0em;
+			font-size: @fontSize * 1.1;
+		}
+		&.title .classPosition {
+			color: @QualiResultEntryTextColor;
+			-ms-transform: skew(0deg, 0deg);
+			-webkit-transform: skew(0deg, 0deg);
+			transform: skew(0deg, 0deg);
+		}
+		& > div {
+			height: 2em;
+			padding: 0 0 0 0.25em;
+			float: left;
+		}
+		.position {
+			text-align: center;
+			width: 10%;
+			position: relative;
+		}
+		.classPosition {
+			width: 10%;
+			position: relative;
+			text-align: center;
+			color: white;
+			right: 0.5em;
+			-ms-transform: skew(-15deg, 0deg);
+			-webkit-transform: skew(-15deg, 0deg);
+			transform: skew(-15deg, 0deg);
+		}
+		.manufacturer {
+			width: 5%;
+			position: relative;
+			.manufacturerFlag {
+				position: absolute;
+				top: 0.1em;
+				height: 100%;
+				img {
+					height: 100%;
+				}
+			}
+			.standingsFlag {
+				height: 80%;
+				position: absolute;
+				top: 0.2em;
+				img {
+					transform: skew(-15deg, 0deg);
+					height: 100%;
+				}
+			}
+		}
+		.longName {
+			position: relative;
+			width: 30%;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			overflow: hidden;
+		}
+		.shortName {
+			position: relative;
+			width: 20%;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			overflow: hidden;
+		}
+		.resultTeam {
+			position: relative;
+			width: 25%;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			overflow: hidden;
+		}
+		.livery {
+			width: 10%;
+			position: relative;
+			img {
+				position: relative;
+				height: 3em;
+				right: 1.5em;
+				top: -0.5em;
+			}
+		}
+		.fastest-time, .lap-time {
+			width: 10%;
+			position: relative;
+			&.fastest {
+				color: #f500f5;
+			}
+		}
+	}
+}
