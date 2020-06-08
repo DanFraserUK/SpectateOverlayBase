@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # RRE TV Overlay
 
 ![alt text](public/img/vw.jpg "Logo Title Text 1")
@@ -53,4 +52,3 @@ The [Unlicense](LICENSE).
 5. Join mp serverselect
 
 # This is a base repository for creating a spectate mode overlay for SABSIMRacing Video content.
->>>>>>> 0ce8f0ecf098ba35ac14c4f11f27194a9ab592c2
