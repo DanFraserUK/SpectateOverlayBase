@@ -3313,6 +3313,282 @@ UI.widgets.CompareRaceDriver = React.createClass({
 		);
 	}
 });
+UI.widgets.CurrentStandings = React.createClass({
+	displayName: 'CurrentStandings',
+
+	componentWillMount: function () {
+		var self = this;
+
+		UI.state.activeWidgets.CompareRace.active = false;
+		io.emit('setState', UI.state);
+
+		function updateInfo() {
+			UI.batch({
+				'driversInfo': r3e.getDriversInfo
+			}, self.setState.bind(self));
+		}
+		updateInfo();
+
+		self.updateInterval = setInterval(updateInfo, UI.spectatorUpdateRate);
+		self.updateLooperInterval = setInterval(this.updateLooperBasedOnPlayerCount, 1000);
+	},
+	updateLooperBasedOnPlayerCount: function () {
+		var maxSlotIndex = 0;
+		var drivers = this.state.driversInfo.driversInfo;
+		drivers.forEach(function (driver) {
+			maxSlotIndex = Math.max(maxSlotIndex, driver.slotId);
+		});
+		this.looper = Array.apply(null, Array(maxSlotIndex + 3));
+	},
+	componentWillUnmount: function () {
+		clearInterval(this.updateInterval);
+		clearInterval(this.updateLooperInterval);
+	},
+	getInitialState: function () {
+		return {
+			'driversInfo': {
+				'driversInfo': []
+			}
+		};
+	},
+	getDriverStyle: function (driver) {
+		return {
+			'WebkitTransform': 'translate3d(0, ' + (driver.scoreInfo.positionOverall - 1) * 100 + '%, 0)'
+		};
+	},
+	formatTime: UI.formatTime,
+	getMetaInfo: function (driver, sortedByPosition) {
+		var self = this;
+		// Race
+		if (UI.state.sessionInfo.type.match(/^race/i)) {
+			// Leader should show current best
+			if (driver.scoreInfo.positionOverall === 1) {
+				if (driver.scoreInfo.currentLapTime !== -1) {
+					return React.createElement(
+						'div',
+						{ className: 'meta-info' },
+						self.formatTime(driver.scoreInfo.currentLapTime, { ignoreSign: true })
+					);
+				} else {
+					return React.createElement('div', { className: 'meta-info' });
+				}
+			} else {
+				if (sortedByPosition[0].scoreInfo.laps - driver.scoreInfo.laps > 1) {
+					return React.createElement(
+						'div',
+						{ className: 'meta-info' },
+						'+',
+						sortedByPosition[0].scoreInfo.laps - driver.scoreInfo.laps - 1,
+						' laps'
+					);
+				} else {
+					var sortedIndex = 0;
+					sortedByPosition.forEach(function (sortedDriver, i) {
+						if (sortedDriver.slotId === driver.slotId) {
+							sortedIndex = i;
+						}
+					});
+					var timeDifference = sortedByPosition.slice(1, sortedIndex + 1).map(function (driver) {
+						return Math.max(0, driver.scoreInfo.timeDiff);
+					}).reduce(function (p, c) {
+						return p + c;
+					});
+					return React.createElement(
+						'div',
+						{ className: 'meta-info' },
+						self.formatTime(timeDifference)
+					);
+				}
+			}
+			// Qualify and Practice
+		} else if (UI.state.sessionInfo.type === 'QUALIFYING' || UI.state.sessionInfo.type === 'PRACTICE') {
+			if (driver.scoreInfo.positionOverall === 1) {
+				if (driver.scoreInfo.bestLapInfo.sector3 !== -1) {
+					return React.createElement(
+						'div',
+						{ className: 'meta-info' },
+						self.formatTime(driver.scoreInfo.bestLapInfo.sector3, { ignoreSign: true })
+					);
+				} else {
+					return React.createElement('div', { className: 'meta-info' });
+				}
+			} else {
+				if (driver.scoreInfo.bestLapInfo.valid) {
+					return React.createElement(
+						'div',
+						{ className: 'meta-info' },
+						self.formatTime(driver.scoreInfo.bestLapInfo.sector3 - sortedByPosition[0].scoreInfo.bestLapInfo.sector3)
+					);
+				} else if (driver.scoreInfo.laps !== sortedByPosition[0].scoreInfo.laps) {
+					return React.createElement(
+						'div',
+						{ className: 'meta-info' },
+						'+',
+						sortedByPosition[0].scoreInfo.laps - driver.scoreInfo.laps,
+						' laps'
+					);
+				} else {
+					return React.createElement('div', { className: 'meta-info' });
+				}
+			}
+		}
+	},
+	sortFunctionPosition: function (a, b) {
+		if (a.scoreInfo.positionOverall > b.scoreInfo.positionOverall) {
+			return 1;
+		} else if (a.scoreInfo.positionOverall === b.scoreInfo.positionOverall) {
+			return 0;
+		} else {
+			return -1;
+		}
+	},
+	fixName: function (name) {
+		var parts = name.split(' ');
+		return parts[parts.length - 1].substr(0, 3).toUpperCase();
+	},
+	shouldShow: function (driver) {
+		if (!driver) {
+			return false;
+		}
+		if (UI.state.sessionInfo.type.match(/^RACE/)) {
+			return true;
+		}
+		if (UI.state.sessionInfo.type === 'PRACTICE' && !driver.scoreInfo.bestLapInfo.valid) {
+			return false;
+		}
+		return driver.scoreInfo.bestLapInfo.valid || driver.scoreInfo.timeDiff != -1;
+	},
+	looper: Array.apply(null, Array(UI.maxDriverCount)),
+	render: function () {
+		// On end phase user portalId is not sent anymore so do not show
+		if (UI.state.sessionInfo.phase === 'END') {
+			return null;
+		}
+
+		var self = this;
+		var p = this.state;
+
+		var drivers = this.state.driversInfo.driversInfo;
+		if (!drivers.length) {
+			return null;
+		}
+
+		var driversLookup = {};
+		drivers.forEach(function (driver) {
+			driversLookup[driver.slotId] = driver;
+		});
+
+		var currentStandingsClasses = cx({
+			'hide-flags': UI.state.activeWidgets.CurrentStandings.disableFlags,
+			'current-standings': true
+		});
+
+		// Need to clone it to keep the base array sorted by slotId
+		return React.createElement(
+			'div',
+			{ className: currentStandingsClasses },
+			self.looper.map(function (non, i) {
+				return React.createElement(
+					'div',
+					{ key: i },
+					self.shouldShow(driversLookup[i]) ? React.createElement(
+						'div',
+						{ className: cx({ 'driver': true, 'active': driversLookup[i].slotId === UI.state.focusedSlot }), key: driversLookup[i].slotId, style: self.getDriverStyle(driversLookup[i]) },
+						self.getMetaInfo(driversLookup[i], drivers),
+						React.createElement(
+							'div',
+							{ className: 'inner' },
+							React.createElement(
+								'div',
+								{ className: 'flag-container' },
+								React.createElement('img', { className: 'flag', src: '/img/flags/' + UI.getUserInfo(driversLookup[i].portalId).country + '.svg' })
+							),
+							React.createElement(
+								'div',
+								{ className: 'position' },
+								driversLookup[i].scoreInfo.positionOverall
+							),
+							React.createElement(
+								'div',
+								{ className: 'name' },
+								self.fixName(driversLookup[i].name)
+							),
+							React.createElement(
+								'div',
+								{ className: 'manufacturer' },
+								React.createElement('img', { src: '/img/manufacturers/' + driversLookup[i].manufacturerId + '.webp' })
+							),
+							React.createElement(
+								'div',
+								{ className: 'pit-info' },
+								driversLookup[i].mandatoryPitstopPerformed === 1 ? React.createElement('div', { className: 'pitted' }) : null,
+								driversLookup[i].mandatoryPitstopPerformed === 0 ? React.createElement('div', { className: 'unpitted' }) : null
+							)
+						)
+					) : null
+				);
+			})
+		);
+	}
+});
+UI.widgets.DamageCheck = React.createClass({
+	displayName: 'DamageCheck',
+
+	componentWillMount: function () {
+		var self = this;
+
+		// Hide widgets that use the same screen space
+		UI.state.activeWidgets.CompareRace.active = false;
+		io.emit('setState', UI.state);
+
+		function updateInfo() {
+			UI.batch({
+				'pitInfo': function (done) {
+					r3e.getPitInfo({
+						'slotId': UI.state.focusedSlot
+					}, done);
+				}
+			}, self.setState.bind(self));
+		}
+		updateInfo();
+
+		self.updateInterval = setInterval(updateInfo, UI.spectatorUpdateRate);
+	},
+	componentWillUnmount: function () {
+		clearInterval(this.updateInterval);
+	},
+	getInitialState: function () {
+		return {
+			'pitInfo': {}
+		};
+	},
+	render: function () {
+		var self = this;
+		var info = self.state.pitInfo;
+		if (!info.tyreType) {
+			return null;
+		}
+
+		return React.createElement(
+			'div',
+			{ className: 'damage-check' },
+			React.createElement(
+				'div',
+				{ className: 'part engine' },
+				'Engine: ',
+				100 - info.damage.engine,
+				'%'
+			),
+			React.createElement(
+				'div',
+				{ className: 'part transmission' },
+				'Transmission: ',
+				100 - info.damage.transmission,
+				'%'
+			)
+		);
+	}
+});
 UI.widgets.DirectorSuggestions = React.createClass({
 	displayName: 'DirectorSuggestions',
 
@@ -5354,6 +5630,177 @@ UI.widgets.SessionInfo = React.createClass({
 					) : null,
 					p.sessionInfo.type.match(/^race/i) && self.yellowFlagOnTrack ? React.createElement('div', { className: 'yellowFlag animated flash infinite' }) : null
 				)
+			)
+		);
+	}
+});
+UI.widgets.StartingGrid = React.createClass({
+	displayName: 'StartingGrid',
+
+	componentWillMount: function () {
+		var self = this;
+
+		// Hide all other overlays besides logo
+		Object.keys(UI.state.activeWidgets).forEach(function (key) {
+			if (key.match(/(StartingGrid|LogoOverlay|AutoDirector)/)) {
+				return;
+			}
+
+			UI.state.activeWidgets[key].active = false;
+		});
+		io.emit('setState', UI.state);
+
+		function updateInfo() {
+			if (UI.state.sessionInfo.phase !== 'GARAGE') {
+				if (UI.state.activeWidgets.StartingGrid.active) {
+					UI.state.activeWidgets.StartingGrid.active = false;
+					io.emit('setState', UI.state);
+				}
+				return;
+			}
+			UI.batch({
+				'driversInfo': r3e.getDriversInfo
+			}, self.setState.bind(self));
+		}
+		updateInfo();
+
+		self.updateInterval = setInterval(updateInfo, UI.spectatorUpdateRate);
+
+		(function checkRefs() {
+			if (!self.refs['entries-outer']) {
+				return setTimeout(checkRefs, 100);
+			}
+
+			var diff = self.refs['entries-outer'].clientHeight - self.refs['entries-inner'].clientHeight;
+			setTimeout(function () {
+				if (!self.refs['entries-inner']) {
+					return;
+				}
+				self.refs['entries-inner'].style.top = diff + 'px';
+			}, 10 * 1000);
+		})();
+	},
+	componentWillUnmount: function () {
+		clearInterval(this.updateInterval);
+	},
+	getInitialState: function () {
+		return {
+			'driversInfo': {
+				'driversInfo': []
+			}
+		};
+	},
+	sortFunctionPosition: function (a, b) {
+		if (a.scoreInfo.positionOverall > b.scoreInfo.positionOverall) {
+			return 1;
+		} else if (a.scoreInfo.positionOverall === b.scoreInfo.positionOverall) {
+			return 0;
+		} else {
+			return -1;
+		}
+	},
+	render: function () {
+		var self = this;
+		if (this.state.driversInfo.driversInfo.length === 0) {
+			return null;
+		}
+		var drivers = this.state.driversInfo.driversInfo;
+
+		var fastestTime = 99999;
+		var fastestTimeIndex = null;
+		drivers.forEach(function (entry, i) {
+			if (entry.scoreInfo.bestLapInfo.sector3 < fastestTime) {
+				fastestTime = entry.scoreInfo.bestLapInfo.sector3;
+				fastestTimeIndex = i;
+			}
+		});
+		if (drivers[fastestTimeIndex]) {
+			drivers[fastestTimeIndex].isFastest = true;
+		}
+
+		return React.createElement(
+			'div',
+			{ className: 'start-grid' },
+			React.createElement(
+				'div',
+				{ className: 'title' },
+				'Starting Grid'
+			),
+			React.createElement(
+				'div',
+				{ className: 'start-grid-entry title' },
+				React.createElement(
+					'div',
+					{ className: 'position' },
+					'Position'
+				),
+				React.createElement('div', { className: 'livery' }),
+				React.createElement('div', { className: 'manufacturer' }),
+				React.createElement(
+					'div',
+					{ className: 'name' },
+					'Name'
+				)
+			),
+			React.createElement(
+				'div',
+				{ className: 'entries-outer', ref: 'entries-outer' },
+				React.createElement(
+					'div',
+					{ className: 'entries-inner', ref: 'entries-inner' },
+					drivers.sort(this.sortFunctionPosition).map(function (entry, i) {
+						return React.createElement(StartingGridEntry, { entry: entry, firstEntry: drivers[0], key: i, index: i });
+					})
+				)
+			)
+		);
+	}
+});
+
+var StartingGridEntry = React.createClass({
+	displayName: 'StartingGridEntry',
+
+	render: function () {
+		var self = this;
+		var entry = self.props.entry;
+		var lapTime = null;
+
+		if (this.props.index === 0) {
+			lapTime = React.createElement(
+				'div',
+				{ className: 'fastest-time' },
+				'-'
+			);
+		} else {
+			lapTime = React.createElement(
+				'div',
+				{ className: 'fastest-time' },
+				UI.formatTime(entry.scoreInfo.bestLapInfo.sector3 - self.props.firstEntry.scoreInfo.bestLapInfo.sector3)
+			);
+		}
+		return React.createElement(
+			'div',
+			{ className: cx({ 'fastest': entry.isFastest, 'start-grid-entry': true }) },
+			React.createElement(
+				'div',
+				{ className: 'position' },
+				entry.scoreInfo.positionOverall,
+				'.'
+			),
+			React.createElement(
+				'div',
+				{ className: 'manufacturer' },
+				React.createElement('img', { src: '/img/manufacturers/' + entry.manufacturerId + '.webp' })
+			),
+			React.createElement(
+				'div',
+				{ className: 'name' },
+				UI.fixName(entry.name)
+			),
+			React.createElement(
+				'div',
+				{ className: 'livery' },
+				React.createElement('img', { src: '/render/' + entry.liveryId + '/small/' })
 			)
 		);
 	}

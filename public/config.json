@@ -122,7 +122,7 @@
     },
     "showServerNameInTimer": {
       "displayName": "Show Server Name in Timer",
-      "value": "false",
+      "value": "true",
       "tooltip": "Shows the name of the server in the session info timer widget (Default: False).",
       "type": "checkbox",
       "translationDisplayName": "showServerNameInTimer",
